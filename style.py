@@ -6,6 +6,7 @@ class Font(BaseModel):
     color: str
     family: str
     location: str
+    x: float
     y: float
 
 class VariableStyle(BaseModel):
@@ -15,18 +16,20 @@ class VariableStyle(BaseModel):
 
 class AxisStyle(BaseModel):
     width : float
-
+    height : float
+    
 ELEMENT_STYLE = {
-    "title": Font(size=16, weight="bold", color="#8D666B", family="SimHei", location="center", y=0.95),
-    "subtitle": Font(size=10, weight="normal", color="#8D666B", family="SimHei", location="center", y=0.90),
-    "label": Font(size=10, weight="normal", color="#8D666B", family="SimHei", location="center", y=0.90),
+    "title": Font(size=16, weight="bold", color="#8D666B", family="SimHei", location="center", x=0.5, y=0.95),
+    "subtitle": Font(size=10, weight="normal", color="#8D666B", family="SimHei", location="center", x=0.5, y=0.90),
+    "label": Font(size=10, weight="normal", color="#8D666B", family="SimHei", location="center", x=0.90, y=0.90),
 }
 
 PLOT_VARIABLE_STYLE = {
     "temperature": VariableStyle(color="#FF0000", label="温度", function=["line", "marker"]),
     "dewpoint": VariableStyle(color="#0000FF", label="露点温度", function=["line", "marker"]),
     "specific_humidity": VariableStyle(color="#008000", label="比湿", function=["line", "marker"]),
-    "wind": VariableStyle(color="#000000", label="风速", function=["bar", "wind"]),
+    "wind_speed": VariableStyle(color="#000000", label="风速", function=["bar"]),
+    "wind_direction": VariableStyle(color="#000000", label="风向", function=["wind"]),
     "relative_humidity": VariableStyle(color="#008000", label="相对湿度", function=["line", "marker"]),
 }
 
@@ -52,7 +55,7 @@ FIGURE_STYLE = {
 }
 
 AX_STYLE = {
-    "plot": {
+    "normal": {
 
     },
     "wind": {

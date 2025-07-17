@@ -1,7 +1,89 @@
 import matplotlib.pyplot as plt
 from typing import List
+from style import VariableStyle
 from style import PLOT_STYLE, PLOT_VARIABLE_STYLE, ELEMENT_STYLE, FIGURE_STYLE, AX_STYLE
 from interface import Variables, SampleInfo, Data
+
+def init_plot():
+    plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS', 'DejaVu Sans']
+    plt.rcParams['axes.unicode_minus'] = False
+    return plt.figure(**FIGURE_STYLE)
+
+def add_plot(ax, pressure: List[float], data: List[float], style: VariableStyle):
+    """
+    添加绘图函数
+
+    Parameters:
+    ax - 坐标轴对象
+    pressure: List[float] - 自变量(气压数据)
+    data: List[float] - 因变量
+    style: VariableStyle - 样式
+    """
+    for function in style.function:
+        if function == "line":
+            ax.plot(pressure, data, **PLOT_STYLE["line"], color=style.color)
+        elif function == "marker":
+            ax.plot(pressure, data, **PLOT_STYLE["marker"], color=style.color)
+        elif function == "bar":
+            ax.bar(pressure, data, **PLOT_STYLE["bar"], color=style.color)
+
+def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: int, ax_style: dict):
+    """
+    探空子图生成器
+
+    Parameters:
+    fig - 图形对象
+    pressure: List[float] - 气压数据 (hPa)
+    subplot_index: int - 子图索引
+    subplot_count: int - 子图数量
+
+    Returns:
+    plot_func: 子图生成函数
+    """
+    def plot_func(variable : dict[str, List[float]]):
+        ax = fig.add_subplot(1, subplot_count, subplot_index, sharey=True)
+        ax.invert_yaxis()
+        ax.set_ylim(ax_style["y_lim"])
+        ax.grid(True, which='major', linestyle='-', linewidth=0.8, alpha=0.6, color='gray')
+        ax.grid(True, which='minor', linestyle='-', linewidth=0.4, alpha=0.3, color='gray')
+        y_ticks = [100, 150, 200, 250, 300, 400, 500, 550]
+        ax.set_yticks(y_ticks)
+        ax.set_yticklabels([str(y) for y in y_ticks])
+        ax.spines['top'].set_visible(True)
+        ax.spines['right'].set_visible(True)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+        for key, value in variable.items():
+            add_plot(ax, pressure, value, PLOT_VARIABLE_STYLE[key])
+        return ax
+    return plot_func
+
+def generate_ax_func(fig, pressure: List[float], variables: Variables):
+    """
+    计算需要绘制的子图
+
+    Parameters:
+    fig - 图形对象
+    pressure: List[float] - 气压数据 (hPa)
+    variables: Variables - 变量
+
+    Returns:
+    func: 子图生成函数
+    params: 子图参数
+    """
+    func = []
+    params = []
+    index = 1
+    variable_table = variables.model_dump()
+    axnum = sum(1 for _ in variable_table.values() if _ is not None)
+    for plot_name, plot_content in variable_table.items():
+        if plot_content is not None:
+            func.append(plot_warpper(fig, pressure, index, axnum, AX_STYLE[plot_name]))
+            raw_data = plot_content.model_dump()
+            params.append( {key: value for key, value in raw_data.items() if value is not None} )
+            index += 1
+    return func, params
+
 
 def plot_window_elements(fig, infos: SampleInfo):
     """
@@ -31,85 +113,11 @@ def plot_window_elements(fig, infos: SampleInfo):
                     ha=ELEMENT_STYLE["source"].location,
                     fontsize=ELEMENT_STYLE["source"].size,
                     bbox=dict(boxstyle="round,pad=0.3"))
-
-def add_plot(ax, pressure: List[float], data: List[float], style: dict):
-    """
-    添加绘图函数
-
-    Parameters:
-    ax - 坐标轴对象
-    pressure: List[float] - 自变量(气压数据)
-    data: List[float] - 因变量
-    style: dict - 样式
-    """
-    for function in style["function"]:
-        if function == "line":
-            ax.plot(pressure, data, **PLOT_STYLE["line"], color=style["color"])
-        elif function == "marker":
-            ax.plot(pressure, data, **PLOT_STYLE["marker"], color=style["color"])
-        elif function == "bar":
-            ax.bar(pressure, data, **PLOT_STYLE["bar"], color=style["color"])
-
-def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: int, ax_style: dict):
-    """
-    探空子图生成器
-
-    Parameters:
-    fig - 图形对象
-    pressure: List[float] - 气压数据 (hPa)
-    subplot_index: int - 子图索引
-    subplot_count: int - 子图数量
-
-    Returns:
-    plot_func: 子图生成函数
-    """
-    def plot_func(variable : dict[str, List[float]]):
-        ax = fig.add_subplot(1, subplot_count, subplot_index, **ax_style)
-        for key, value in variable.items():
-            add_plot(ax, pressure, value, PLOT_VARIABLE_STYLE[key])
-        return ax
-    return plot_func
-
-def generate_ax_func(fig, pressure: List[float], variables: Variables):
-    """
-    计算需要绘制的子图
-    """
-    axnum = sum([
-        any([variables.temperature is not None, variables.dewpoint is not None, variables.specific_humidity is not None]),
-        variables.wind is not None,
-        variables.relative_humidity is not None
-    ])
-    func = []
-    params = []
-    index = 1
-    if (any([variables.temperature is not None, variables.dewpoint is not None, variables.specific_humidity is not None])):
-        func.append(plot_warpper(fig, pressure, index, axnum, AX_STYLE["plot"]))
-        parm_dict = {}
-        if variables.temperature is not None:
-            parm_dict["temperature"] = variables.temperature
-        if variables.dewpoint is not None:
-            parm_dict["dewpoint"] = variables.dewpoint
-        if variables.specific_humidity is not None:
-            parm_dict["specific_humidity"] = variables.specific_humidity
-        params.append(parm_dict)
-        index += 1
-    if (variables.wind is not None):
-        func.append(plot_warpper(fig, pressure, index, axnum, AX_STYLE["wind"]))
-        params.append({
-            "wind_direction": variables.wind.direction,
-            "wind_speed": variables.wind.speed
-        })
-        index += 1
-    if (variables.relative_humidity is not None):
-        func.append(plot_warpper(fig, pressure, index, axnum, AX_STYLE["humidity"]))
-        params.append({
-            "relative_humidity": variables.relative_humidity
-        })
-        index += 1
-    return func, params
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.87, wspace=0.3)
 
 def main(data: Data):
-    fig = plt.figure(**FIGURE_STYLE)
+    fig = init_plot()
     funcs, params = generate_ax_func(fig, data.pressure, data.variables)
     
     for func, param in zip(funcs, params):
@@ -134,45 +142,9 @@ def plot_sounding_diagram(pressure_data, temperature_data, dewpoint_data, wind_d
     coords: str - 坐标信息
     """
     
-    # 设置中文字体
-    plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS', 'DejaVu Sans']
-    plt.rcParams['axes.unicode_minus'] = False
-    
-    # 创建图形和三个子图
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(16, 10), sharey=True)
-    
-    # 设置总标题
-    main_title = f"{location} {coords}"
-    sub_title = date_time
-    
-    fig.suptitle(main_title, fontsize=16, fontweight='bold', y=0.95)
-    if sub_title:
-        fig.text(0.5, 0.92, sub_title, ha='center', fontsize=12)
-    
-    # 添加数据源标识（右上角，带边框）
-    fig.text(0.92, 0.92, source, ha='center', fontsize=10, 
-             bbox=dict(boxstyle="round,pad=0.3", facecolor="lightgray", edgecolor="black"))
-    
     # 设置所有子图的Y轴
     for ax in [ax1, ax2, ax3]:
-        ax.set_yscale('log')
-        ax.invert_yaxis()
-        ax.set_ylim(550, 100)
         
-        # 主网格线
-        ax.grid(True, which='major', linestyle='-', linewidth=0.8, alpha=0.6, color='gray')
-        ax.grid(True, which='minor', linestyle='-', linewidth=0.4, alpha=0.3, color='gray')
-        
-        # 设置Y轴刻度
-        y_ticks = [100, 150, 200, 250, 300, 400, 500, 550]
-        ax.set_yticks(y_ticks)
-        ax.set_yticklabels([str(y) for y in y_ticks])
-        
-        # 设置边框
-        ax.spines['top'].set_visible(True)
-        ax.spines['right'].set_visible(True)
-        ax.spines['bottom'].set_visible(True)
-        ax.spines['left'].set_visible(True)
     
     # 第一个子图：气象探空图（温度和露点温度）
     ax1.set_xlim(-120, 60)
@@ -226,9 +198,5 @@ def plot_sounding_diagram(pressure_data, temperature_data, dewpoint_data, wind_d
         # 添加数据标签
         for i, (p, h) in enumerate(zip(pressure_data, humidity_data)):
             ax3.text(h + 1, p, f'{h:.2f}', color='green', fontsize=8, ha='left', va='center')
-    
-    # 调整子图间距
-    plt.tight_layout()
-    plt.subplots_adjust(top=0.87, wspace=0.3)
     
     return fig, (ax1, ax2, ax3)

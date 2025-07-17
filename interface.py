@@ -3,15 +3,21 @@ from typing import List, Union
 from datetime import datetime
 
 class Wind(BaseModel):
-    speed: List[float]
-    direction: List[float]
+    wind_speed: List[float]
+    wind_direction: List[float]
 
-class Variables(BaseModel):
+class Normal(BaseModel):
     temperature: Union[List[float], None] = None
     dewpoint: Union[List[float], None] = None
-    wind: Union[Wind, None] = None
     specific_humidity: Union[List[float], None] = None
-    relative_humidity: Union[List[float], None] = None
+
+class Humidity(BaseModel):
+    relative_humidity: List[float]
+
+class Variables(BaseModel):
+    normal: Union[Normal, None] = None
+    wind: Union[Wind, None] = None
+    humidity: Union[Humidity, None] = None
 
 class SampleInfo(BaseModel):
     province: Union[str, None] = None
