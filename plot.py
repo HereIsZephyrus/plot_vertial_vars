@@ -3,6 +3,7 @@ from functools import partial
 import matplotlib.pyplot as plt
 import datetime
 from style import PLOT_STYLE, PLOT_VARIABLE_STYLE, ELEMENT_STYLE, FIGURE_STYLE
+from interface import Variables, SampleInfo, Data
 
 def add_plot(ax: plt.Axes, pressure: list[float], data: list[float], style: dict):
     for function in style["function"]:
@@ -33,12 +34,8 @@ def plot_warpper(fig: plt.Figure, pressure: list[float], subplot_index: int, sub
         return ax
     return plot_func
 
-def main(pressure_data : list[float], location: str, date_time: str, coords: str, source: str, variable_data : dict[str, list[float]]):
+def main(data: Data):
     fig = plt.figure(**FIGURE_STYLE)
-    
-
-
-    fig = generate_figure(ax_list)
     plot_window("青海省", "都兰县", datetime.datetime(2025, 7, 17, 8, 0, 0), 35.61, 96.68, "CMA-GFS", fig)
     plt.show()
 
