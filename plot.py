@@ -1,11 +1,47 @@
-from matplotlib.patches import Rectangle
-from functools import partial
 import matplotlib.pyplot as plt
-import datetime
-from style import PLOT_STYLE, PLOT_VARIABLE_STYLE, ELEMENT_STYLE, FIGURE_STYLE
+from typing import List
+from style import PLOT_STYLE, PLOT_VARIABLE_STYLE, ELEMENT_STYLE, FIGURE_STYLE, AX_STYLE
 from interface import Variables, SampleInfo, Data
 
-def add_plot(ax: plt.Axes, pressure: list[float], data: list[float], style: dict):
+def plot_window_elements(fig, infos: SampleInfo):
+    """
+    绘制气象探空图的窗口
+    
+    Parameters:
+    fig - 图形对象
+    infos: SampleInfo - 样本信息
+    """
+    plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS', 'DejaVu Sans']
+    plt.rcParams['axes.unicode_minus'] = False
+
+    title = f"{infos.province}：{infos.location} 坐标：[{infos.latitude},{infos.longitude}]"
+    subtitle = f"{infos.time.strftime('%Y-%m-%dT%H')}"
+    fig.suptitle(title,
+                    fontsize=ELEMENT_STYLE["title"].size, 
+                    fontweight=ELEMENT_STYLE["title"].weight,
+                    color=ELEMENT_STYLE["title"].color,
+                    y=ELEMENT_STYLE["title"].y,
+                    ha=ELEMENT_STYLE["title"].location)
+    fig.text(0.5, 0.92, subtitle,
+                    ha=ELEMENT_STYLE["subtitle"].location,
+                    color=ELEMENT_STYLE["subtitle"].color,
+                    fontsize=ELEMENT_STYLE["subtitle"].size,
+                    y=ELEMENT_STYLE["subtitle"].y)
+    fig.text(0.5, 0.90, infos.source,
+                    ha=ELEMENT_STYLE["source"].location,
+                    fontsize=ELEMENT_STYLE["source"].size,
+                    bbox=dict(boxstyle="round,pad=0.3"))
+
+def add_plot(ax, pressure: List[float], data: List[float], style: dict):
+    """
+    添加绘图函数
+
+    Parameters:
+    ax - 坐标轴对象
+    pressure: List[float] - 自变量(气压数据)
+    data: List[float] - 因变量
+    style: dict - 样式
+    """
     for function in style["function"]:
         if function == "line":
             ax.plot(pressure, data, **PLOT_STYLE["line"], color=style["color"])
@@ -14,29 +50,72 @@ def add_plot(ax: plt.Axes, pressure: list[float], data: list[float], style: dict
         elif function == "bar":
             ax.bar(pressure, data, **PLOT_STYLE["bar"], color=style["color"])
 
-def plot_warpper(fig: plt.Figure, pressure: list[float], subplot_index: int, subplot_count: int, ax_style: dict):
+def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: int, ax_style: dict):
     """
     探空子图生成器
 
     Parameters:
-    fig: plt.Figure - 图形对象
-    pressure: list[float] - 气压数据 (hPa)
+    fig - 图形对象
+    pressure: List[float] - 气压数据 (hPa)
     subplot_index: int - 子图索引
     subplot_count: int - 子图数量
 
     Returns:
     plot_func: 子图生成函数
     """
-    def plot_func(variable : dict[str, list[float]]):
+    def plot_func(variable : dict[str, List[float]]):
         ax = fig.add_subplot(1, subplot_count, subplot_index, **ax_style)
         for key, value in variable.items():
             add_plot(ax, pressure, value, PLOT_VARIABLE_STYLE[key])
         return ax
     return plot_func
 
+def generate_ax_func(fig, pressure: List[float], variables: Variables):
+    """
+    计算需要绘制的子图
+    """
+    axnum = sum([
+        any([variables.temperature is not None, variables.dewpoint is not None, variables.specific_humidity is not None]),
+        variables.wind is not None,
+        variables.relative_humidity is not None
+    ])
+    func = []
+    params = []
+    index = 1
+    if (any([variables.temperature is not None, variables.dewpoint is not None, variables.specific_humidity is not None])):
+        func.append(plot_warpper(fig, pressure, index, axnum, AX_STYLE["plot"]))
+        parm_dict = {}
+        if variables.temperature is not None:
+            parm_dict["temperature"] = variables.temperature
+        if variables.dewpoint is not None:
+            parm_dict["dewpoint"] = variables.dewpoint
+        if variables.specific_humidity is not None:
+            parm_dict["specific_humidity"] = variables.specific_humidity
+        params.append(parm_dict)
+        index += 1
+    if (variables.wind is not None):
+        func.append(plot_warpper(fig, pressure, index, axnum, AX_STYLE["wind"]))
+        params.append({
+            "wind_direction": variables.wind.direction,
+            "wind_speed": variables.wind.speed
+        })
+        index += 1
+    if (variables.relative_humidity is not None):
+        func.append(plot_warpper(fig, pressure, index, axnum, AX_STYLE["humidity"]))
+        params.append({
+            "relative_humidity": variables.relative_humidity
+        })
+        index += 1
+    return func, params
+
 def main(data: Data):
     fig = plt.figure(**FIGURE_STYLE)
-    plot_window("青海省", "都兰县", datetime.datetime(2025, 7, 17, 8, 0, 0), 35.61, 96.68, "CMA-GFS", fig)
+    funcs, params = generate_ax_func(fig, data.pressure, data.variables)
+    
+    for func, param in zip(funcs, params):
+        func(param)
+    
+    plot_window_elements(fig, data.info)
     plt.show()
 
 def plot_sounding_diagram(pressure_data, temperature_data, dewpoint_data, wind_data=None, 

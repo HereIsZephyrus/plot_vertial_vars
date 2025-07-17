@@ -1,22 +1,25 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Union
 from datetime import datetime
 
+class Wind(BaseModel):
+    speed: List[float]
+    direction: List[float]
+
 class Variables(BaseModel):
-    temperature: List[float]
-    humidity: List[float]
-    wind_speed: List[float]
-    wind_direction: List[float]
-    specific_humidity: List[float]
-    relative_humidity: List[float]
+    temperature: Union[List[float], None] = None
+    dewpoint: Union[List[float], None] = None
+    wind: Union[Wind, None] = None
+    specific_humidity: Union[List[float], None] = None
+    relative_humidity: Union[List[float], None] = None
 
 class SampleInfo(BaseModel):
-    province: Union[str, None]
+    province: Union[str, None] = None
     location: str
-    time: datetime
+    time: datetime = Field(default_factory=datetime.now)
     latitude: float
     longitude: float
-    source: str
+    source: str = Field(default="CMA-GFS")
 
 class Data(BaseModel):
     info: SampleInfo
