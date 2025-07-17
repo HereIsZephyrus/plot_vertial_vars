@@ -5,7 +5,7 @@
 包含：温度露点图、风速图、相对湿度图
 """
 
-from main import plot_sounding_diagram
+from plot import plot_sounding_diagram
 
 # 你的实际数据示例
 def your_data_example():

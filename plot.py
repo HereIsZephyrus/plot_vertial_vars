@@ -1,30 +1,46 @@
-import matplotlib.pyplot as plt
-import numpy as np
 from matplotlib.patches import Rectangle
-import matplotlib.patches as mpatches
+from functools import partial
+import matplotlib.pyplot as plt
 import datetime
+from style import PLOT_STYLE, PLOT_VARIABLE_STYLE, ELEMENT_STYLE, FIGURE_STYLE
 
-def plot_window(province: str, location: str, date: datetime, lat: float, lon: float, source: str):
+def add_plot(ax: plt.Axes, pressure: list[float], data: list[float], style: dict):
+    for function in style["function"]:
+        if function == "line":
+            ax.plot(pressure, data, **PLOT_STYLE["line"], color=style["color"])
+        elif function == "marker":
+            ax.plot(pressure, data, **PLOT_STYLE["marker"], color=style["color"])
+        elif function == "bar":
+            ax.bar(pressure, data, **PLOT_STYLE["bar"], color=style["color"])
+
+def plot_warpper(fig: plt.Figure, pressure: list[float], subplot_index: int, subplot_count: int, ax_style: dict):
     """
-    绘制气象探空图的窗口
-    
+    探空子图生成器
+
     Parameters:
-    province: str - 省份信息
-    location: str - 地点信息
-    date: datetime - 日期时间
-    lat: float - 纬度
-    lon: float - 经度
-    source: str - 数据来源
-    """
-    plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS', 'DejaVu Sans']
-    plt.rcParams['axes.unicode_minus'] = False
+    fig: plt.Figure - 图形对象
+    pressure: list[float] - 气压数据 (hPa)
+    subplot_index: int - 子图索引
+    subplot_count: int - 子图数量
 
-    title = f"{province}：{location} 坐标：[{lat},{lon}]"
-    subtitle = f"{date.strftime('%Y-%m-%dT%H')}"
-    fig.suptitle(title, fontsize=16, fontweight='bold', y=0.95)
-    fig.text(0.5, 0.92, subtitle, ha='center', fontsize=12)
-    fig.text(0.5, 0.90, source, ha='center', fontsize=10, 
-             bbox=dict(boxstyle="round,pad=0.3"))
+    Returns:
+    plot_func: 子图生成函数
+    """
+    def plot_func(variable : dict[str, list[float]]):
+        ax = fig.add_subplot(1, subplot_count, subplot_index, **ax_style)
+        for key, value in variable.items():
+            add_plot(ax, pressure, value, PLOT_VARIABLE_STYLE[key])
+        return ax
+    return plot_func
+
+def main(pressure_data : list[float], location: str, date_time: str, coords: str, source: str, variable_data : dict[str, list[float]]):
+    fig = plt.figure(**FIGURE_STYLE)
+    
+
+
+    fig = generate_figure(ax_list)
+    plot_window("青海省", "都兰县", datetime.datetime(2025, 7, 17, 8, 0, 0), 35.61, 96.68, "CMA-GFS", fig)
+    plt.show()
 
 def plot_sounding_diagram(pressure_data, temperature_data, dewpoint_data, wind_data=None, 
                          humidity_data=None, location="", date_time="", coords=""):
@@ -140,23 +156,3 @@ def plot_sounding_diagram(pressure_data, temperature_data, dewpoint_data, wind_d
     plt.subplots_adjust(top=0.87, wspace=0.3)
     
     return fig, (ax1, ax2, ax3)
-
-# 从图中提取的实际数据
-def create_realistic_data():
-    """创建与图中相似的实际数据"""
-    # 气压数据 (hPa)
-    pressure = [100, 150, 200, 250, 300, 350, 400, 450, 500, 550]
-    
-    # 温度数据 (°C) - 从图中读取的近似值
-    temperature = [-70.94, -54.5, -40.47, -23.35, -15.08, -6.69, -8.21, -9.61, -10.98, -12.24]
-    
-    # 露点温度数据 (°C) - 从图中读取的近似值
-    dewpoint = [-78.68, -58.46, -67.27, -81.64, -84.98, -8.19, -22.77, -26.3, -29.6, -32.0]
-    
-    # 风速数据 (m/s) - 从图中读取的近似值
-    wind_speed = [5.35, 2.81, 3.47, 0.97, 0.97, 0.97, 0.97, 0.96, 0.96, 0.96]
-    
-    # 相对湿度数据 (%) - 从图中读取的近似值
-    humidity = [61.91, 62.83, 66.48, 60.81, 51.56, 44.57, 39.14, 34.83, 31.34, 28.47]
-    
-    return pressure, temperature, dewpoint, wind_speed, humidity
