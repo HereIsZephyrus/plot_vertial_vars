@@ -1,3 +1,5 @@
+import os
+import matplotlib.pyplot as plt
 from main import main
 import json
 from interface import construct_data
@@ -142,11 +144,26 @@ data8 = {
     "pressure": pressure
 }
 
-main(construct_data(json.dumps(data1)), "test单图单要素温湿.png")
-main(construct_data(json.dumps(data2)), "test单图单要素风力.png")
-main(construct_data(json.dumps(data3)), "test单图单要素湿度.png")
-main(construct_data(json.dumps(data4)), "test单图多要素温湿.png")
-main(construct_data(json.dumps(data5)), "test温湿湿度双图.png")
-main(construct_data(json.dumps(data6)), "test温湿风力双图.png")
-main(construct_data(json.dumps(data7)), "test风力湿度双图.png")
-main(construct_data(json.dumps(data8)), "test全三图.png")
+def post_process(filename: str):
+    def save_fig():
+        plt.savefig(os.path.join("figures", filename), dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"图像已保存到 {filename}")
+    return save_fig
+
+main(construct_data(json.dumps(data1)), post_process("test单图单要素温湿.png"))
+main(construct_data(json.dumps(data2)), post_process("test单图单要素风力.png"))
+main(construct_data(json.dumps(data3)), post_process("test单图单要素湿度.png"))
+main(construct_data(json.dumps(data4)), post_process("test单图多要素温湿.png"))
+main(construct_data(json.dumps(data5)), post_process("test温湿湿度双图.png"))
+main(construct_data(json.dumps(data6)), post_process("test温湿风力双图.png"))
+main(construct_data(json.dumps(data7)), post_process("test风力湿度双图.png"))
+main(construct_data(json.dumps(data8)), post_process("test全三图.png"))
+main(construct_data(json.dumps({"show_digit": True, **data1})), post_process("test单图单要素温湿带数字.png"))
+main(construct_data(json.dumps({"show_digit": True, **data2})), post_process("test单图单要素风力带数字.png"))
+main(construct_data(json.dumps({"show_digit": True, **data3})), post_process("test单图单要素湿度带数字.png"))
+main(construct_data(json.dumps({"show_digit": True, **data4})), post_process("test单图多要素温湿带数字.png"))
+main(construct_data(json.dumps({"show_digit": True, **data5})), post_process("test温湿湿度双图带数字.png"))
+main(construct_data(json.dumps({"show_digit": True, **data6})), post_process("test温湿风力双图带数字.png"))
+main(construct_data(json.dumps({"show_digit": True, **data7})), post_process("test风力湿度双图带数字.png"))
+main(construct_data(json.dumps({"show_digit": True, **data8})), post_process("test全三图带数字.png"))

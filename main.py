@@ -3,17 +3,16 @@ import matplotlib.pyplot as plt
 from plot import init_plot, generate_ax_func, plot_window_elements
 from interface import construct_data, Data
 
-def main(data: Data, filename: str):
+def main(data: Data, post_process = None):
     fig = init_plot()
-    funcs, params, gs = generate_ax_func(fig, data.pressure, data.variables)
+    funcs, params, gs = generate_ax_func(fig, data.pressure, data.variables, data.show_digit)
     
     for func, param in zip(funcs, params):
         func(param, gs)
     
     plot_window_elements(fig, data.info)
-    plt.savefig(os.path.join("figures", filename), dpi=300, bbox_inches='tight')
-    plt.close()
-    print(f"图像已保存到 {filename}")
+    if post_process is not None:
+        post_process()
 
 if __name__ == "__main__":
     import sys

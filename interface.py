@@ -32,11 +32,17 @@ class Data(BaseModel):
     info: SampleInfo
     variables: Variables
     pressure: List[float]
+    show_digit: bool = False
 
 def construct_data(data_json: str) -> Data:
     data = json.loads(data_json)
+    if "show_digit" in data:
+        show_digit = data["show_digit"]
+    else:
+        show_digit = False
     return Data(
         info=SampleInfo(**data["info"]),
         variables=Variables(**data["variables"]),
-        pressure=data["pressure"]
+        pressure=data["pressure"],
+        show_digit=show_digit
     )

@@ -6,6 +6,7 @@ from style import PLOT_STYLE, PLOT_VARIABLE_STYLE, ELEMENT_STYLE, FIGURE_STYLE, 
 from interface import Variables, SampleInfo, Data
 import sys
 import numpy as np
+from functools import partial
 
 def init_plot():
     if sys.platform == "win32":
@@ -13,11 +14,11 @@ def init_plot():
     elif sys.platform == "linux":
         plt.rcParams['font.sans-serif'] = ['Unifont', 'Noto Sans CJK JP', 'DejaVu Sans']
     elif sys.platform == "darwin":
-        plt.rcParams['font.sans-serif'] = ['SimSun','DejaVu Sans']
+        plt.rcParams['font.sans-serif'] = ['SimHei','DejaVu Sans']
     plt.rcParams['axes.unicode_minus'] = False
     return plt.figure(figsize=FIGURE_STYLE["figsize"])
 
-def add_plot(ax, pressure: List[float], data: List[float], style: VariableStyle):
+def add_plot(ax, pressure: List[float], data: List[float], style: VariableStyle, show_digit: bool):
     """
     添加绘图函数
 
@@ -26,6 +27,7 @@ def add_plot(ax, pressure: List[float], data: List[float], style: VariableStyle)
     pressure: List[float] - 自变量(气压数据)
     data: List[float] - 因变量
     style: VariableStyle - 样式
+    show_digit: bool - 是否显示数字
     """
     if not data or not pressure or len(data) != len(pressure):
         raise ValueError(f"Invalid data for {style.label}")
@@ -34,9 +36,15 @@ def add_plot(ax, pressure: List[float], data: List[float], style: VariableStyle)
         if function == "line":
             # 气象探空图：x轴是数据值，y轴是气压值
             ax.plot(data, pressure, **PLOT_STYLE["line"], color=style.color, label=style.label)
+            if show_digit:
+                for x, y in zip(data, pressure):
+                    ax.text(x + 5, y + 5, f"{x:.1f}", ha='center', va='bottom')
         elif function == "bar":
             # 条形图
             ax.barh(pressure, data, **PLOT_STYLE["bar"], color=style.color, label=style.label)
+            if show_digit:
+                for x, y in zip(data, pressure):
+                    ax.text(x + 0.5, y + 2.5, f"{x:.1f}", ha='center', va='bottom')
         elif function == "wind":
             pass # 在add_wind_plot中绘制
 
@@ -57,7 +65,7 @@ def draw_wind_barb(ax, x, y, wind_speed, wind_direction, length, pivot='middle')
     u = wind_speed * np.sin(wind_direction_rad)
     v = wind_speed * np.cos(wind_direction_rad)
     ax.barbs(x, y, u, v, length=length, pivot=pivot, 
-             barbcolor='black', flagcolor='red', linewidth=1.5, clip_on=False)
+             barbcolor='black', flagcolor='red', linewidth=1, clip_on=False)
 
 def add_wind_plot(ax, pressure: List[float], wind_speed: List[float], 
                   wind_direction: List[float], is_first: bool):
@@ -75,14 +83,14 @@ def add_wind_plot(ax, pressure: List[float], wind_speed: List[float],
         raise ValueError(f"Invalid wind data")
     
     x_pos = 3 if is_first else -5
-    y_bias = 5 if is_first else 2
-    length = 6
+    y_bias = 8 if is_first else 2
+    length = 5 if is_first else 6
     for (ws, wd, p) in zip(wind_speed, wind_direction, pressure):
         if ws is not None and wd is not None and ws > 0:
             draw_wind_barb(ax, x_pos, p + y_bias, ws, wd, length)
             y_bias += 1
 
-def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: int, plot_name: str):
+def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: int, plot_name: str, show_digit: bool):
     """
     探空子图生成器
 
@@ -91,6 +99,7 @@ def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: 
     pressure: List[float] - 气压数据 (hPa)
     subplot_index: int - 子图索引
     subplot_count: int - 子图数量
+    show_digit: bool - 是否显示数字
 
     Returns:
     plot_func: 子图生成函数
@@ -100,6 +109,7 @@ def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: 
     max_ytick = int(((max(pressure) + 49) // 50) * 50)
     y_lim = [min_ytick - 10, max_ytick + 10]
     y_ticks = list(range(min_ytick, max_ytick + 1, 100))
+    plot_generator = partial(add_plot, show_digit=show_digit)
     def plot_func(variable : dict[str, List[float]], gs=None):
         if gs is not None:
             ax = fig.add_subplot(gs[0, subplot_index-1])
@@ -137,14 +147,16 @@ def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: 
             add_wind_plot(ax, pressure, variable["wind_speed"], variable["wind_direction"], subplot_index == 1)
 
         for key, value in variable.items():
-            add_plot(ax, pressure, value, PLOT_VARIABLE_STYLE[key])
+            plot_generator(ax, pressure, value, PLOT_VARIABLE_STYLE[key])
+            if (key == "specific_humidity"): # 比湿额外增加x轴标签
+                ax.text(0.82, -0.05, "(g/kg)", transform=ax.transAxes, ha='center', va='center')
 
-        ax.legend(loc='upper left',framealpha=0.5, facecolor="none")
+        ax.legend(loc=ax_style.label_location,framealpha=0.5, facecolor="none")
         
         return ax
     return plot_func
 
-def generate_ax_func(fig, pressure: List[float], variables: Variables):
+def generate_ax_func(fig, pressure: List[float], variables: Variables, show_digit: bool):
     """
     计算需要绘制的子图
 
@@ -152,6 +164,7 @@ def generate_ax_func(fig, pressure: List[float], variables: Variables):
     fig - 图形对象
     pressure: List[float] - 气压数据 (hPa)
     variables: Variables - 变量
+    show_digit: bool - 是否显示数字
 
     Returns:
     func: 子图生成函数
@@ -176,7 +189,7 @@ def generate_ax_func(fig, pressure: List[float], variables: Variables):
                 width_ratios.append(AX_STYLE[plot_name].figure_width)
             else:
                 width_ratios.append(remain_with)
-            func.append(plot_warpper(fig, pressure, index, axnum, plot_name))
+            func.append(plot_warpper(fig, pressure, index, axnum, plot_name, show_digit))
             params.append( {key: value for key, value in plot_content.items() if value is not None} )
             index += 1
     gs = gridspec.GridSpec(1, axnum, width_ratios=width_ratios)
