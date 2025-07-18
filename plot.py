@@ -40,7 +40,7 @@ def add_plot(ax, pressure: List[float], data: List[float], style: VariableStyle)
         elif function == "wind":
             pass # 在add_wind_plot中绘制
 
-def draw_wind_barb(ax, x, y, wind_speed, wind_direction, length=0.8, pivot='middle'):
+def draw_wind_barb(ax, x, y, wind_speed, wind_direction, length, pivot='middle'):
     """
     绘制单个风矢
     
@@ -56,11 +56,11 @@ def draw_wind_barb(ax, x, y, wind_speed, wind_direction, length=0.8, pivot='midd
     wind_direction_rad = np.radians(wind_direction + 180)
     u = wind_speed * np.sin(wind_direction_rad)
     v = wind_speed * np.cos(wind_direction_rad)
-    ax.barbs(x, y, u, v, length=length*7, pivot=pivot, 
+    ax.barbs(x, y, u, v, length=length, pivot=pivot, 
              barbcolor='black', flagcolor='red', linewidth=1.5, clip_on=False)
 
 def add_wind_plot(ax, pressure: List[float], wind_speed: List[float], 
-                  wind_direction: List[float]):
+                  wind_direction: List[float], is_first: bool):
     """
     添加风矢图
     
@@ -74,11 +74,12 @@ def add_wind_plot(ax, pressure: List[float], wind_speed: List[float],
     if not wind_speed or not wind_direction or not pressure:
         raise ValueError(f"Invalid wind data")
     
-    x_pos = -5
-    y_bias = 2
+    x_pos = 3 if is_first else -5
+    y_bias = 5 if is_first else 2
+    length = 6
     for (ws, wd, p) in zip(wind_speed, wind_direction, pressure):
         if ws is not None and wd is not None and ws > 0:
-            draw_wind_barb(ax, x_pos, p + y_bias, ws, wd)
+            draw_wind_barb(ax, x_pos, p + y_bias, ws, wd, length)
             y_bias += 1
 
 def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: int, plot_name: str):
@@ -133,7 +134,7 @@ def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: 
             if xlim[1] < max(variable["wind_speed"]):
                 xlim[1] = max(variable["wind_speed"]) + 1
             ax.set_xlim(xlim)
-            add_wind_plot(ax, pressure, variable["wind_speed"], variable["wind_direction"])
+            add_wind_plot(ax, pressure, variable["wind_speed"], variable["wind_direction"], subplot_index == 1)
 
         for key, value in variable.items():
             add_plot(ax, pressure, value, PLOT_VARIABLE_STYLE[key])
