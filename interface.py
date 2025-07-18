@@ -16,7 +16,7 @@ class Humidity(BaseModel):
     relative_humidity: Union[List[float], None] = None
 
 class Variables(BaseModel):
-    normal: Union[Temperature, None] = None
+    temperature: Union[Temperature, None] = None
     wind: Union[Wind, None] = None
     humidity: Union[Humidity, None] = None
 

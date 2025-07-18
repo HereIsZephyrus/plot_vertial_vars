@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 from typing import List
 from style import VariableStyle, AxisStyle
 from style import PLOT_STYLE, PLOT_VARIABLE_STYLE, ELEMENT_STYLE, FIGURE_STYLE, AX_STYLE
@@ -53,8 +54,13 @@ def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: 
     max_ytick = int(((max(pressure) + 49) // 50) * 50)
     y_lim = [min_ytick, max_ytick]
     y_ticks = list(range(min_ytick, max_ytick + 1, 100))
-    def plot_func(variable : dict[str, List[float]]):
-        ax = fig.add_subplot(1, subplot_count, subplot_index)
+    def plot_func(variable : dict[str, List[float]], gs=None):
+        # 如果提供了GridSpec，使用它；否则使用默认方式
+        if gs is not None:
+            ax = fig.add_subplot(gs[0, subplot_index-1])
+        else:
+            ax = fig.add_subplot(1, subplot_count, subplot_index)
+        
         ax.invert_yaxis()
         ax.set_ylim(y_lim)
         ax.grid(True, which='major', linestyle=ax_style.grid_line_style, linewidth=ax_style.grid_line_width, alpha=ax_style.grid_line_alpha, color=ax_style.grid_line_color)
@@ -64,6 +70,9 @@ def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: 
         ax.spines['right'].set_visible(True)
         ax.spines['bottom'].set_visible(True)
         ax.spines['left'].set_visible(True)
+        ax.set_xlim(ax_style.x_lim)
+        ax.set_xlabel(ax_style.x_label)
+        ax.set_ylabel("(hPa)")
         for key, value in variable.items():
             add_plot(ax, pressure, value, PLOT_VARIABLE_STYLE[key])
 
@@ -85,12 +94,15 @@ def generate_ax_func(fig, pressure: List[float], variables: Variables):
     Returns:
     func: 子图生成函数
     params: 子图参数
+    gs: GridSpec对象
     """
     func = []
     params = []
+    width_ratios = []
     index = 1
     variable_table = variables.model_dump()
     axnum = sum(1 for _ in variable_table.values() if _ is not None)
+    #remain_with = sum(AX_STYLE[p].figure_width for p in variable_table.values() if p is not None) + (axnum - 1) * 2
     for plot_name, plot_content in variable_table.items():
         if plot_content is not None:
             func.append(plot_warpper(fig, pressure, index, axnum, AX_STYLE[plot_name]))

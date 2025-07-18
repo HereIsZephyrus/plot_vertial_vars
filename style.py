@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Union
 
 class Font(BaseModel):
     size: int
@@ -19,6 +19,9 @@ class AxisStyle(BaseModel):
     grid_line_color : str = "gray"
     grid_line_alpha : float = 0.6
     grid_line_style : str = "-"
+    x_lim : List[float]
+    x_label : str
+    figure_width : Union[int, None] = None
     
 ELEMENT_STYLE = {
     "title": Font(size=16, weight="bold", color="#8D666B", location="center", x=0.5, y=0.95),
@@ -41,6 +44,8 @@ PLOT_STYLE = {
         "linewidth": 2,
         "markersize": 5,
         "marker": "o",
+        "markerfacecolor": "white",     # 设置为白色填充
+        "markeredgewidth": 1.5,         # 设置边框宽度
     },
     "bar":{
         "width": 0.5
@@ -55,7 +60,7 @@ FIGURE_STYLE = {
 }
 
 AX_STYLE = {
-    "normal": AxisStyle(),
-    "wind": AxisStyle(),
-    "humidity": AxisStyle(),
+    "temperature": AxisStyle(x_lim=[-120, 40], x_label="(℃)", figure_width=None),
+    "wind": AxisStyle(x_lim=[0, 10], x_label="(m/s)", figure_width=1),
+    "humidity": AxisStyle(x_lim=[0, 100], x_label="(%)", figure_width=2),
 }
