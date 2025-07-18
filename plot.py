@@ -5,6 +5,7 @@ from style import VariableStyle, AxisStyle
 from style import PLOT_STYLE, PLOT_VARIABLE_STYLE, ELEMENT_STYLE, FIGURE_STYLE, AX_STYLE
 from interface import Variables, SampleInfo, Data
 import sys
+import numpy as np
 
 def init_plot():
     if sys.platform == "win32":
@@ -27,8 +28,7 @@ def add_plot(ax, pressure: List[float], data: List[float], style: VariableStyle)
     style: VariableStyle - 样式
     """
     if not data or not pressure or len(data) != len(pressure):
-        print(f"Warning: Invalid data for {style.label}")
-        return
+        raise ValueError(f"Invalid data for {style.label}")
 
     for function in style.function:
         if function == "line":
@@ -38,10 +38,54 @@ def add_plot(ax, pressure: List[float], data: List[float], style: VariableStyle)
             # 条形图
             ax.barh(pressure, data, **PLOT_STYLE["bar"], color=style.color, label=style.label)
         elif function == "wind":
-            # 风向图（待实现）
-            pass
+            pass # 在add_wind_plot中绘制
 
-def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: int, ax_style: AxisStyle):
+def draw_wind_barb(ax, x, y, wind_speed, wind_direction, length=0.8, pivot='middle'):
+    """
+    绘制单个风矢
+    
+    Parameters:
+    ax - 坐标轴对象
+    x, y - 风矢的位置
+    wind_speed - 风速 (m/s)
+    wind_direction - 风向 (度，0度为北风)
+    length - 风矢长度
+    pivot - 风矢的锚点位置
+    """
+    # 转换风向：气象风向是指风的来向，matplotlib需要的是去向
+    # 气象风向0度为北风，matplotlib 0度为东风
+    wind_direction_rad = np.radians(wind_direction + 180)  # 转换为去向
+    
+    # 计算风矢的分量
+    u = wind_speed * np.sin(wind_direction_rad)
+    v = wind_speed * np.cos(wind_direction_rad)
+    
+    # 使用matplotlib的barbs函数绘制风矢
+    ax.barbs(x, y, u, v, length=length, pivot=pivot, 
+             barbcolor='black', flagcolor='red', linewidth=1.5)
+
+def add_wind_plot(ax, pressure: List[float], wind_speed: List[float], 
+                  wind_direction: List[float]):
+    """
+    添加风矢图
+    
+    Parameters:
+    ax - 坐标轴对象
+    pressure - 气压数据
+    wind_speed - 风速数据
+    wind_direction - 风向数据
+    style - 样式
+    """
+    if not wind_speed or not wind_direction or not pressure:
+        raise ValueError(f"Invalid wind data")
+    
+    x_pos = 5  # 固定在风向图的中央位置
+    
+    for i, (ws, wd, p) in enumerate(zip(wind_speed, wind_direction, pressure)):
+        if ws is not None and wd is not None and ws > 0:
+            draw_wind_barb(ax, x_pos, p + 10, ws, wd)
+
+def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: int, plot_name: str):
     """
     探空子图生成器
 
@@ -54,6 +98,7 @@ def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: 
     Returns:
     plot_func: 子图生成函数
     """
+    ax_style : AxisStyle = AX_STYLE[plot_name]
     min_ytick = int((min(pressure) // 50) * 50)
     max_ytick = int(((max(pressure) + 49) // 50) * 50)
     y_lim = [min_ytick - 10, max_ytick + 10]
@@ -86,6 +131,9 @@ def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: 
             ax.set_yticklabels([str(y) for y in y_ticks])
         else:
             ax.sharey(fig.axes[0])
+
+        if plot_name == "wind":
+            add_wind_plot(ax, pressure, variable["wind_speed"], variable["wind_direction"])
 
         for key, value in variable.items():
             add_plot(ax, pressure, value, PLOT_VARIABLE_STYLE[key])
@@ -127,7 +175,7 @@ def generate_ax_func(fig, pressure: List[float], variables: Variables):
                 width_ratios.append(AX_STYLE[plot_name].figure_width)
             else:
                 width_ratios.append(remain_with)
-            func.append(plot_warpper(fig, pressure, index, axnum, AX_STYLE[plot_name]))
+            func.append(plot_warpper(fig, pressure, index, axnum, plot_name))
             params.append( {key: value for key, value in plot_content.items() if value is not None} )
             index += 1
     gs = gridspec.GridSpec(1, axnum, width_ratios=width_ratios)
