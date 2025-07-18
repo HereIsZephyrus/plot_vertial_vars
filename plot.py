@@ -52,17 +52,12 @@ def draw_wind_barb(ax, x, y, wind_speed, wind_direction, length=0.8, pivot='midd
     length - 风矢长度
     pivot - 风矢的锚点位置
     """
-    # 转换风向：气象风向是指风的来向，matplotlib需要的是去向
-    # 气象风向0度为北风，matplotlib 0度为东风
-    wind_direction_rad = np.radians(wind_direction + 180)  # 转换为去向
-    
-    # 计算风矢的分量
+    # 转换风向：(1)气象风向是指风的来向，matplotlib需要的是去向；(2)气象风向0度为北风，matplotlib 0度为东风
+    wind_direction_rad = np.radians(wind_direction + 180)
     u = wind_speed * np.sin(wind_direction_rad)
     v = wind_speed * np.cos(wind_direction_rad)
-    
-    # 使用matplotlib的barbs函数绘制风矢
-    ax.barbs(x, y, u, v, length=length, pivot=pivot, 
-             barbcolor='black', flagcolor='red', linewidth=1.5)
+    ax.barbs(x, y, u, v, length=length*7, pivot=pivot, 
+             barbcolor='black', flagcolor='red', linewidth=1.5, clip_on=False)
 
 def add_wind_plot(ax, pressure: List[float], wind_speed: List[float], 
                   wind_direction: List[float]):
@@ -79,11 +74,12 @@ def add_wind_plot(ax, pressure: List[float], wind_speed: List[float],
     if not wind_speed or not wind_direction or not pressure:
         raise ValueError(f"Invalid wind data")
     
-    x_pos = 5  # 固定在风向图的中央位置
-    
-    for i, (ws, wd, p) in enumerate(zip(wind_speed, wind_direction, pressure)):
+    x_pos = -5
+    y_bias = 2
+    for (ws, wd, p) in zip(wind_speed, wind_direction, pressure):
         if ws is not None and wd is not None and ws > 0:
-            draw_wind_barb(ax, x_pos, p + 10, ws, wd)
+            draw_wind_barb(ax, x_pos, p + y_bias, ws, wd)
+            y_bias += 1
 
 def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: int, plot_name: str):
     """
@@ -130,9 +126,13 @@ def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: 
             ax.set_yticks(y_ticks)
             ax.set_yticklabels([str(y) for y in y_ticks])
         else:
-            ax.sharey(fig.axes[0])
+            ax.set_yticklabels([])
 
-        if plot_name == "wind":
+        if plot_name == "wind": # 风图的一些特殊处理
+            xlim = ax_style.x_lim
+            if xlim[1] < max(variable["wind_speed"]):
+                xlim[1] = max(variable["wind_speed"]) + 1
+            ax.set_xlim(xlim)
             add_wind_plot(ax, pressure, variable["wind_speed"], variable["wind_direction"])
 
         for key, value in variable.items():
