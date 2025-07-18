@@ -8,7 +8,7 @@ def init_plot():
     # 使用经过测试的中文字体，优先使用Unifont和Noto Sans CJK JP
     plt.rcParams['font.sans-serif'] = ['Unifont', 'Noto Sans CJK JP', 'DejaVu Sans']
     plt.rcParams['axes.unicode_minus'] = False
-    return plt.figure(**FIGURE_STYLE)
+    return plt.figure(figsize=FIGURE_STYLE["figsize"])
 
 def add_plot(ax, pressure: List[float], data: List[float], style: VariableStyle):
     """
@@ -20,13 +20,21 @@ def add_plot(ax, pressure: List[float], data: List[float], style: VariableStyle)
     data: List[float] - 因变量
     style: VariableStyle - 样式
     """
+    # 检查数据有效性
+    if not data or not pressure or len(data) != len(pressure):
+        print(f"Warning: Invalid data for {style.label}")
+        return
+
     for function in style.function:
         if function == "line":
-            ax.plot(pressure, data, **PLOT_STYLE["line"], color=style.color)
-        elif function == "marker":
-            ax.plot(pressure, data, **PLOT_STYLE["marker"], color=style.color)
+            # 气象探空图：x轴是数据值，y轴是气压值
+            ax.plot(data, pressure, **PLOT_STYLE["line"], color=style.color, label=style.label)
         elif function == "bar":
-            ax.bar(pressure, data, **PLOT_STYLE["bar"], color=style.color)
+            # 条形图
+            ax.bar(data, pressure, **PLOT_STYLE["bar"], color=style.color, label=style.label)
+        elif function == "wind":
+            # 风向图（待实现）
+            pass
 
 def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: int, ax_style: AxisStyle):
     """
@@ -41,19 +49,27 @@ def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: 
     Returns:
     plot_func: 子图生成函数
     """
+    min_ytick = int((min(pressure) // 50) * 50)
+    max_ytick = int(((max(pressure) + 49) // 50) * 50)
+    y_lim = [min_ytick, max_ytick]
+    y_ticks = list(range(min_ytick, max_ytick + 1, 100))
     def plot_func(variable : dict[str, List[float]]):
         ax = fig.add_subplot(1, subplot_count, subplot_index)
         ax.invert_yaxis()
-        ax.set_ylim(ax_style.y_lim)
+        ax.set_ylim(y_lim)
         ax.grid(True, which='major', linestyle=ax_style.grid_line_style, linewidth=ax_style.grid_line_width, alpha=ax_style.grid_line_alpha, color=ax_style.grid_line_color)
-        ax.set_yticks(ax_style.y_ticks)
-        ax.set_yticklabels([str(y) for y in ax_style.y_ticks])
+        ax.set_yticks(y_ticks)
+        ax.set_yticklabels([str(y) for y in y_ticks])
         ax.spines['top'].set_visible(True)
         ax.spines['right'].set_visible(True)
         ax.spines['bottom'].set_visible(True)
         ax.spines['left'].set_visible(True)
         for key, value in variable.items():
             add_plot(ax, pressure, value, PLOT_VARIABLE_STYLE[key])
+
+        if len(variable) > 1:
+            ax.legend(loc='best')
+        
         return ax
     return plot_func
 

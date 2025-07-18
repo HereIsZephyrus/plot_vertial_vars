@@ -15,8 +15,6 @@ class VariableStyle(BaseModel):
     function: list[str]
 
 class AxisStyle(BaseModel):
-    y_lim : List[float] = [100, 550]
-    y_ticks : List[float] = [100, 150, 200, 250, 300, 400, 500, 550]
     grid_line_width : float = 0.8
     grid_line_color : str = "gray"
     grid_line_alpha : float = 0.6
@@ -29,20 +27,18 @@ ELEMENT_STYLE = {
 }
 
 PLOT_VARIABLE_STYLE = {
-    "temperature": VariableStyle(color="#FF0000", label="温度", function=["line", "marker"]),
-    "dewpoint": VariableStyle(color="#0000FF", label="露点温度", function=["line", "marker"]),
-    "specific_humidity": VariableStyle(color="#008000", label="比湿", function=["line", "marker"]),
+    "temperature": VariableStyle(color="#FF0000", label="温度", function=["line"]),
+    "dewpoint": VariableStyle(color="#0000FF", label="露点温度", function=["line"]),
+    "specific_humidity": VariableStyle(color="#008000", label="比湿", function=["line"]),
     "wind_speed": VariableStyle(color="#000000", label="风速", function=["bar"]),
     "wind_direction": VariableStyle(color="#000000", label="风向", function=["wind"]),
-    "relative_humidity": VariableStyle(color="#008000", label="相对湿度", function=["line", "marker"]),
+    "relative_humidity": VariableStyle(color="#008000", label="相对湿度", function=["line"]),
 }
 
 PLOT_STYLE = {
     "line":{
         "linestyle": "-",
-        "linewidth": 2
-    },
-    "marker":{
+        "linewidth": 2,
         "markersize": 5,
         "marker": "o",
     },
