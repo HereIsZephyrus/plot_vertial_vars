@@ -3,12 +3,12 @@ import json
 from interface import construct_data
 # 生成若干组样例数据
 data_length = 10
-pressure = [980, 925, 850, 775, 700, 625, 550, 475, 400, 290]
+pressure = [550, 500, 450, 400, 350, 300, 250, 200, 150, 100]
 temperature = [20, 18, 16, 14, 12, 10, 8, 6, 4, 2]
 dewpoint = [18, 16, 14, 12, 10, 8, 6, 4, 2, 0]
 relative_humidity = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
 specific_humidity = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
-wind_speed = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+wind_speed = [1, 2, 3, 4, 5, 6, 5, 4, 3, 2]
 wind_direction = [0, 45, 90, 135, 180, 225, 270, 315, 360, 45]
 
 test_info = {

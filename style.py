@@ -48,7 +48,7 @@ PLOT_STYLE = {
         "markeredgewidth": 1.5,         # 设置边框宽度
     },
     "bar":{
-        "width": 0.5
+        "height": 5
     },
     "wind":{
         

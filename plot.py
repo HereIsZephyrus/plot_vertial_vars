@@ -31,7 +31,7 @@ def add_plot(ax, pressure: List[float], data: List[float], style: VariableStyle)
             ax.plot(data, pressure, **PLOT_STYLE["line"], color=style.color, label=style.label)
         elif function == "bar":
             # 条形图
-            ax.bar(data, pressure, **PLOT_STYLE["bar"], color=style.color, label=style.label)
+            ax.barh(pressure, data, **PLOT_STYLE["bar"], color=style.color, label=style.label)
         elif function == "wind":
             # 风向图（待实现）
             pass
@@ -51,7 +51,7 @@ def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: 
     """
     min_ytick = int((min(pressure) // 50) * 50)
     max_ytick = int(((max(pressure) + 49) // 50) * 50)
-    y_lim = [min_ytick, max_ytick]
+    y_lim = [min_ytick - 10, max_ytick + 10]
     y_ticks = list(range(min_ytick, max_ytick + 1, 100))
     def plot_func(variable : dict[str, List[float]], gs=None):
         if gs is not None:
@@ -67,20 +67,25 @@ def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: 
         ax.spines['left'].set_visible(True)
         ax.set_xlim(ax_style.x_lim)
         ax.set_xlabel(ax_style.x_label)
-        ax.set_ylim(y_lim)
-        ax.set_yticks(y_ticks)
-        ax.set_yticklabels([str(y) for y in y_ticks])
         if subplot_index == 1:
             ax.set_ylabel("(hPa)")
-        if subplot_count > 1 and subplot_index == subplot_count:
+            ax.set_ylim(y_lim)
+            ax.set_yticks(y_ticks)
+            ax.set_yticklabels([str(y) for y in y_ticks])
+        elif subplot_count > 1 and subplot_index == subplot_count:
             ax.yaxis.set_label_position("right")
             ax.yaxis.tick_right()
             ax.yaxis.set_label_coords(1.05, 0.5)
+            ax.set_ylim(y_lim)
+            ax.set_yticks(y_ticks)
+            ax.set_yticklabels([str(y) for y in y_ticks])
+        else:
+            ax.sharey(fig.axes[0])
 
         for key, value in variable.items():
             add_plot(ax, pressure, value, PLOT_VARIABLE_STYLE[key])
 
-        ax.legend(loc='best')
+        ax.legend(loc='upper left',framealpha=0.5, facecolor="none")
         
         return ax
     return plot_func
