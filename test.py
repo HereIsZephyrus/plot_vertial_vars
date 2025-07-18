@@ -146,6 +146,7 @@ data8 = {
 
 def post_process(filename: str):
     def save_fig():
+        os.makedirs("figures", exist_ok=True)
         plt.savefig(os.path.join("figures", filename), dpi=300, bbox_inches='tight')
         plt.close()
         print(f"图像已保存到 {filename}")
