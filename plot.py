@@ -4,10 +4,15 @@ from typing import List
 from style import VariableStyle, AxisStyle
 from style import PLOT_STYLE, PLOT_VARIABLE_STYLE, ELEMENT_STYLE, FIGURE_STYLE, AX_STYLE
 from interface import Variables, SampleInfo, Data
+import sys
 
 def init_plot():
-    # 使用经过测试的中文字体，优先使用Unifont和Noto Sans CJK JP
-    plt.rcParams['font.sans-serif'] = ['Unifont', 'Noto Sans CJK JP', 'DejaVu Sans']
+    if sys.platform == "win32":
+        plt.rcParams['font.sans-serif'] = ['STSong', 'DejaVu Sans']
+    elif sys.platform == "linux":
+        plt.rcParams['font.sans-serif'] = ['Unifont', 'Noto Sans CJK JP', 'DejaVu Sans']
+    elif sys.platform == "darwin":
+        plt.rcParams['font.sans-serif'] = ['SimSun','DejaVu Sans']
     plt.rcParams['axes.unicode_minus'] = False
     return plt.figure(figsize=FIGURE_STYLE["figsize"])
 
