@@ -13,6 +13,8 @@ class VariableStyle(BaseModel):
     color: str
     label: str
     function: list[str]
+    x_offset: float = 0.4
+    y_offset: float = 0.015
 
 class AxisStyle(BaseModel):
     grid_line_width : float = 0.8
@@ -31,12 +33,12 @@ ELEMENT_STYLE = {
 }
 
 PLOT_VARIABLE_STYLE = {
-    "temperature": VariableStyle(color="#FF0000", label="温度", function=["line"]),
-    "dewpoint": VariableStyle(color="#0000FF", label="露点温度", function=["line"]),
-    "specific_humidity": VariableStyle(color="#008000", label="比湿", function=["line"]),
-    "wind_speed": VariableStyle(color="#222222", label="风速", function=["bar"]),
+    "temperature": VariableStyle(color="#FF0000", label="温度", function=["line"], x_offset=-0.15, y_offset=-0.01),
+    "dewpoint": VariableStyle(color="#0000FF", label="露点温度", function=["line"], x_offset=0.4, y_offset=0.015),
+    "specific_humidity": VariableStyle(color="#008000", label="比湿", function=["line"], x_offset=0.4, y_offset=0.015),
+    "wind_speed": VariableStyle(color="#222222", label="风速", function=["bar"], x_offset=-0.15, y_offset=0.02),
     "wind_direction": VariableStyle(color="#000000", label="风向", function=["wind"]),
-    "relative_humidity": VariableStyle(color="#008000", label="相对湿度", function=["line"]),
+    "relative_humidity": VariableStyle(color="#008000", label="相对湿度", function=["line"], x_offset=0.4, y_offset=0.015),
 }
 
 PLOT_STYLE = {
@@ -45,8 +47,8 @@ PLOT_STYLE = {
         "linewidth": 2,
         "markersize": 5,
         "marker": "o",
-        "markerfacecolor": "white",     # 设置为白色填充
-        "markeredgewidth": 1.5,         # 设置边框宽度
+        "markerfacecolor": "white",
+        "markeredgewidth": 1.5,
     },
     "bar":{
         "height": 5

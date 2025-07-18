@@ -7,6 +7,7 @@ from interface import Variables, SampleInfo, Data
 import sys
 import numpy as np
 from functools import partial
+from adjustText import adjust_text
 
 def init_plot():
     if sys.platform == "win32":
@@ -32,19 +33,38 @@ def add_plot(ax, pressure: List[float], data: List[float], style: VariableStyle,
     if not data or not pressure or len(data) != len(pressure):
         raise ValueError(f"Invalid data for {style.label}")
 
+    x_range = max(data) - min(data)
+    y_range = max(pressure) - min(pressure)
     for function in style.function:
         if function == "line":
-            # 气象探空图：x轴是数据值，y轴是气压值
             ax.plot(data, pressure, **PLOT_STYLE["line"], color=style.color, label=style.label)
             if show_digit:
+                
                 for x, y in zip(data, pressure):
-                    ax.text(x + 5, y + 5, f"{x:.1f}", ha='center', va='bottom')
+                    x_offset = x_range * style.x_offset
+                    y_offset = y_range * style.y_offset
+                    
+                    ax.text(x - x_offset, y - y_offset, f"{x:.1f}", 
+                            color=style.color,
+                           ha='left', va='center', fontsize=8,
+                           bbox=dict(boxstyle="round,pad=0.2", 
+                                    facecolor='white', alpha=0.9, edgecolor='none'))
+
         elif function == "bar":
-            # 条形图
             ax.barh(pressure, data, **PLOT_STYLE["bar"], color=style.color, label=style.label)
             if show_digit:
+                max_value = max(data)
                 for x, y in zip(data, pressure):
-                    ax.text(x + 0.5, y + 2.5, f"{x:.1f}", ha='center', va='bottom')
+                    x_offset = x_range * style.x_offset
+                    y_offset = y_range * style.y_offset
+                    if x == max_value:
+                        x_offset = x_range * style.x_offset * 2
+                        y_offset = y_range * style.y_offset * 2
+                    ax.text(x + x_offset, y - y_offset, f"{x:.1f}", 
+                            color=style.color,
+                            ha='left', va='center', fontsize=8,
+                            bbox=dict(boxstyle="round,pad=0.2", 
+                                        facecolor='white', alpha=0.9, edgecolor='none'))
         elif function == "wind":
             pass # 在add_wind_plot中绘制
 
@@ -116,7 +136,6 @@ def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: 
         else:
             ax = fig.add_subplot(1, subplot_count, subplot_index)
         
-        ax.invert_yaxis()
         ax.grid(True, which='major', linestyle=ax_style.grid_line_style, linewidth=ax_style.grid_line_width, alpha=ax_style.grid_line_alpha, color=ax_style.grid_line_color)
         ax.spines['top'].set_visible(True)
         ax.spines['right'].set_visible(True)
@@ -151,6 +170,7 @@ def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: 
             if (key == "specific_humidity"): # 比湿额外增加x轴标签
                 ax.text(0.82, -0.05, "(g/kg)", transform=ax.transAxes, ha='center', va='center')
 
+        ax.invert_yaxis()
         ax.legend(loc=ax_style.label_location,framealpha=0.5, facecolor="none")
         
         return ax
@@ -223,6 +243,6 @@ def plot_window_elements(fig, infos: SampleInfo):
             s=infos.source,
             ha=ELEMENT_STYLE["source"].location,
             fontsize=ELEMENT_STYLE["source"].size,
-            bbox=dict(boxstyle="round,pad=0.3"))
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor="black"))
     plt.tight_layout()
     plt.subplots_adjust(top=0.87, wspace=0.1)
