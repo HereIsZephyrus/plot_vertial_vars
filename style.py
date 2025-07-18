@@ -1,10 +1,10 @@
 from pydantic import BaseModel
+from typing import List
 
 class Font(BaseModel):
     size: int
     weight: str
     color: str
-    family: str
     location: str
     x: float
     y: float
@@ -15,13 +15,17 @@ class VariableStyle(BaseModel):
     function: list[str]
 
 class AxisStyle(BaseModel):
-    width : float
-    height : float
+    y_lim : List[float] = [100, 550]
+    y_ticks : List[float] = [100, 150, 200, 250, 300, 400, 500, 550]
+    grid_line_width : float = 0.8
+    grid_line_color : str = "gray"
+    grid_line_alpha : float = 0.6
+    grid_line_style : str = "-"
     
 ELEMENT_STYLE = {
-    "title": Font(size=16, weight="bold", color="#8D666B", family="SimHei", location="center", x=0.5, y=0.95),
-    "subtitle": Font(size=10, weight="normal", color="#8D666B", family="SimHei", location="center", x=0.5, y=0.90),
-    "label": Font(size=10, weight="normal", color="#8D666B", family="SimHei", location="center", x=0.90, y=0.90),
+    "title": Font(size=16, weight="bold", color="#8D666B", location="center", x=0.5, y=0.95),
+    "subtitle": Font(size=10, weight="normal", color="#8D666B", location="center", x=0.5, y=0.90),
+    "source": Font(size=10, weight="normal", color="#8D666B", location="center", x=0.90, y=0.90),
 }
 
 PLOT_VARIABLE_STYLE = {
@@ -35,15 +39,15 @@ PLOT_VARIABLE_STYLE = {
 
 PLOT_STYLE = {
     "line":{
-        "line_style": "-",
-        "line_width": 2
+        "linestyle": "-",
+        "linewidth": 2
     },
     "marker":{
-        "marker_size": 5,
-        "marker_style": "o",
+        "markersize": 5,
+        "marker": "o",
     },
     "bar":{
-        "bar_width": 0.5
+        "width": 0.5
     },
     "wind":{
         
@@ -55,13 +59,7 @@ FIGURE_STYLE = {
 }
 
 AX_STYLE = {
-    "normal": {
-
-    },
-    "wind": {
-
-    },
-    "humidity": {
-
-    },
+    "normal": AxisStyle(),
+    "wind": AxisStyle(),
+    "humidity": AxisStyle(),
 }

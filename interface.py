@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+import json
 from typing import List, Union
 from datetime import datetime
 
@@ -6,16 +7,16 @@ class Wind(BaseModel):
     wind_speed: List[float]
     wind_direction: List[float]
 
-class Normal(BaseModel):
+class Temperature(BaseModel):
     temperature: Union[List[float], None] = None
     dewpoint: Union[List[float], None] = None
     specific_humidity: Union[List[float], None] = None
 
 class Humidity(BaseModel):
-    relative_humidity: List[float]
+    relative_humidity: Union[List[float], None] = None
 
 class Variables(BaseModel):
-    normal: Union[Normal, None] = None
+    normal: Union[Temperature, None] = None
     wind: Union[Wind, None] = None
     humidity: Union[Humidity, None] = None
 
@@ -31,3 +32,11 @@ class Data(BaseModel):
     info: SampleInfo
     variables: Variables
     pressure: List[float]
+
+def construct_data(data_json: str) -> Data:
+    data = json.loads(data_json)
+    return Data(
+        info=SampleInfo(**data["info"]),
+        variables=Variables(**data["variables"]),
+        pressure=data["pressure"]
+    )
