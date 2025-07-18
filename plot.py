@@ -21,7 +21,6 @@ def add_plot(ax, pressure: List[float], data: List[float], style: VariableStyle)
     data: List[float] - 因变量
     style: VariableStyle - 样式
     """
-    # 检查数据有效性
     if not data or not pressure or len(data) != len(pressure):
         print(f"Warning: Invalid data for {style.label}")
         return
@@ -55,29 +54,33 @@ def plot_warpper(fig, pressure: List[float], subplot_index: int, subplot_count: 
     y_lim = [min_ytick, max_ytick]
     y_ticks = list(range(min_ytick, max_ytick + 1, 100))
     def plot_func(variable : dict[str, List[float]], gs=None):
-        # 如果提供了GridSpec，使用它；否则使用默认方式
         if gs is not None:
             ax = fig.add_subplot(gs[0, subplot_index-1])
         else:
             ax = fig.add_subplot(1, subplot_count, subplot_index)
         
         ax.invert_yaxis()
-        ax.set_ylim(y_lim)
         ax.grid(True, which='major', linestyle=ax_style.grid_line_style, linewidth=ax_style.grid_line_width, alpha=ax_style.grid_line_alpha, color=ax_style.grid_line_color)
-        ax.set_yticks(y_ticks)
-        ax.set_yticklabels([str(y) for y in y_ticks])
         ax.spines['top'].set_visible(True)
         ax.spines['right'].set_visible(True)
         ax.spines['bottom'].set_visible(True)
         ax.spines['left'].set_visible(True)
         ax.set_xlim(ax_style.x_lim)
         ax.set_xlabel(ax_style.x_label)
-        ax.set_ylabel("(hPa)")
+        ax.set_ylim(y_lim)
+        ax.set_yticks(y_ticks)
+        ax.set_yticklabels([str(y) for y in y_ticks])
+        if subplot_index == 1:
+            ax.set_ylabel("(hPa)")
+        if subplot_count > 1 and subplot_index == subplot_count:
+            ax.yaxis.set_label_position("right")
+            ax.yaxis.tick_right()
+            ax.yaxis.set_label_coords(1.05, 0.5)
+
         for key, value in variable.items():
             add_plot(ax, pressure, value, PLOT_VARIABLE_STYLE[key])
 
-        if len(variable) > 1:
-            ax.legend(loc='best')
+        ax.legend(loc='best')
         
         return ax
     return plot_func
@@ -101,14 +104,25 @@ def generate_ax_func(fig, pressure: List[float], variables: Variables):
     width_ratios = []
     index = 1
     variable_table = variables.model_dump()
-    axnum = sum(1 for _ in variable_table.values() if _ is not None)
-    #remain_with = sum(AX_STYLE[p].figure_width for p in variable_table.values() if p is not None) + (axnum - 1) * 2
+    axnum = 0
+    remain_with = 0
+    for name,data in variable_table.items():
+        if data is not None:
+            axnum += 1
+            remain_with += AX_STYLE[name].figure_width or 0
+    remain_with += (axnum - 1) * 2
+    remain_with = FIGURE_STYLE["figsize"][0] - remain_with
     for plot_name, plot_content in variable_table.items():
         if plot_content is not None:
+            if AX_STYLE[plot_name].figure_width is not None:
+                width_ratios.append(AX_STYLE[plot_name].figure_width)
+            else:
+                width_ratios.append(remain_with)
             func.append(plot_warpper(fig, pressure, index, axnum, AX_STYLE[plot_name]))
             params.append( {key: value for key, value in plot_content.items() if value is not None} )
             index += 1
-    return func, params
+    gs = gridspec.GridSpec(1, axnum, width_ratios=width_ratios)
+    return func, params, gs
 
 def plot_window_elements(fig, infos: SampleInfo):
     """
@@ -140,4 +154,4 @@ def plot_window_elements(fig, infos: SampleInfo):
             fontsize=ELEMENT_STYLE["source"].size,
             bbox=dict(boxstyle="round,pad=0.3"))
     plt.tight_layout()
-    plt.subplots_adjust(top=0.87, wspace=0.3)
+    plt.subplots_adjust(top=0.87, wspace=0.1)

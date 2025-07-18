@@ -21,7 +21,7 @@ class AxisStyle(BaseModel):
     grid_line_style : str = "-"
     x_lim : List[float]
     x_label : str
-    figure_width : Union[int, None] = None
+    figure_width : Union[float, None] = None
     
 ELEMENT_STYLE = {
     "title": Font(size=16, weight="bold", color="#8D666B", location="center", x=0.5, y=0.95),
@@ -56,11 +56,11 @@ PLOT_STYLE = {
 }
 
 FIGURE_STYLE = {
-    "figsize": (12, 8),
+    "figsize": (8, 8),
 }
 
 AX_STYLE = {
-    "temperature": AxisStyle(x_lim=[-120, 40], x_label="(℃)", figure_width=None),
+    "temperature": AxisStyle(x_lim=[-120, 40], x_label="(°C)", figure_width=None),
     "wind": AxisStyle(x_lim=[0, 10], x_label="(m/s)", figure_width=1),
-    "humidity": AxisStyle(x_lim=[0, 100], x_label="(%)", figure_width=2),
+    "humidity": AxisStyle(x_lim=[0, 100], x_label="(%)", figure_width=1.2),
 }
