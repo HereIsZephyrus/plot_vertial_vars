@@ -110,7 +110,6 @@ def generate_ax_func(fig, pressure: List[float], variables: Variables):
         if data is not None:
             axnum += 1
             remain_with += AX_STYLE[name].figure_width or 0
-    remain_with += (axnum - 1) * 2
     remain_with = FIGURE_STYLE["figsize"][0] - remain_with
     for plot_name, plot_content in variable_table.items():
         if plot_content is not None:

@@ -1,7 +1,7 @@
+import os
+import matplotlib.pyplot as plt
 from plot import init_plot, generate_ax_func, plot_window_elements
 from interface import construct_data, Data
-import matplotlib.pyplot as plt
-import os
 
 def main(data: Data, filename: str):
     fig = init_plot()
